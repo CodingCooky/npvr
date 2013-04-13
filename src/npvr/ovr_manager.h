@@ -10,12 +10,16 @@ namespace npvr {
 
 class OVRManager: public OVR::MessageHandler {
 public:
+  virtual ~OVRManager();
   static OVRManager *Instance();
+  OVR::HMDDevice* GetDevice() const;
   bool DevicePresent() const;
   OVR::Quatf &GetOrientation() const;
+  void ResetOrientation();
   virtual void OnMessage(const OVR::Message &message);
 private:
   OVRManager();
+  void SetDevice(OVR::HMDDevice* device);
   OVR::DeviceManager *device_manager_;
   OVR::HMDDevice     *hmd_device_;
   OVR::SensorFusion  *sensor_fusion_;
