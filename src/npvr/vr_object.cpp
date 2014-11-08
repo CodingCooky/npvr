@@ -32,6 +32,7 @@ VRObject::VRObject(NPP npp) :
     sixense_ready_(false) {
   exec_id_ = NPN_GetStringIdentifier("exec");
   poll_id_ = NPN_GetStringIdentifier("poll");
+  oState_id_ = NPN_GetStringIdentifier("oculState");
 
   // Initialize sixense library, if needed.
   if (!sixense_init_count_) {
@@ -92,6 +93,34 @@ bool VRObject::InvokeExec(const NPVariant* args, uint32_t arg_count,
 
 void VRObject::ExecQuery(const char* command_str, std::ostringstream& s) {
   s << "hello!";
+}
+
+bool VRObject::InvokeOConfigurationRequest(const NPVariant* args, uint32_t arg_count,
+	NPVariant* result) {
+	std::ostringstream s;
+
+	GetOculusConfiguration(s);
+
+	// TODO(benvanik): avoid this extra allocation/copy somehow - perhaps
+	//     by preallocating a large enough buffer (fixed size 8K or something)
+	std::string s_value = s.str();
+	size_t s_len = s_value.length();
+	NPUTF8* ret_str = (NPUTF8*)NPN_MemAlloc(s_len + 1);
+	strcpy(ret_str, s_value.c_str());
+	STRINGZ_TO_NPVARIANT(ret_str, *result);
+
+	return true;
+}
+
+void VRObject::GetOculusConfiguration(std::ostringstream& s) {
+	OVRManager *manager = OVRManager::Instance();
+	if (manager->DevicePresent()) {
+		ovrHmd configuration = manager->GetConfiguration();
+		s << configuration->DisplayDeviceName << ",";
+		s << configuration->Resolution.h << ",";
+		s << configuration->Resolution.w << ",";
+		s << configuration->ProductName << ",";
+	}
 }
 
 bool VRObject::InvokePoll(const NPVariant* args, uint32_t arg_count,
@@ -165,15 +194,19 @@ void VRObject::PollOculus(std::ostringstream& s) {
   OVRManager *manager = OVRManager::Instance();
   if (manager->DevicePresent()) {
     s << "r,";
-    OVR::Quatf o = manager->GetOrientation();
-    s << o.x << "," << o.y << "," << o.z << "," << o.w;
-    s << "|";
+    OVR::Quatf* o = manager->GetOrientation();   
+	// Extended with the three position parameters! ==> Attention: Needs update from VR.js
+	OVR::Vector3f* pos = manager->GetPosition();	
+	s << o->x << "," << o->y << "," << o->z << "," << o->w;
+	s << "," << pos->x << "," << pos->y << "," << pos->z;		
+	s << "|";	
   }
 }
 
 bool VRObject::HasMethod(NPIdentifier name) {
   if (name == exec_id_ ||
-      name == poll_id_) {
+      name == poll_id_ ||
+	  name == oState_id_) {
     return true;
   }
   return false;
@@ -181,12 +214,18 @@ bool VRObject::HasMethod(NPIdentifier name) {
 
 bool VRObject::Invoke(NPIdentifier name, const NPVariant* args,
                       uint32_t argCount, NPVariant* result) {
-  if (name == exec_id_) {
-    return InvokeExec(args, argCount, result);
-  } else if (name == poll_id_) {
-    return InvokePoll(args, argCount, result);
-  }
-  return false;
+	if (name == exec_id_) {
+		return InvokeExec(args, argCount, result);
+	}
+	else if (name == poll_id_) {
+		return InvokePoll(args, argCount, result);
+	}
+	else if (name == oState_id_)
+	{
+		return  InvokeOConfigurationRequest(args, argCount, result);
+	}
+	 
+	return false;
 }
 
 bool VRObject::InvokeDefault(const NPVariant* args, uint32_t argCount,
@@ -210,6 +249,7 @@ bool VRObject::Enumerate(NPIdentifier** identifiers, uint32_t* count) {
   static NPIdentifier all_ids[] = {
     exec_id_,
     poll_id_,
+	oState_id_,
   };
   int id_count = (int)(sizeof(all_ids) / sizeof(NPIdentifier));
   NPIdentifier* ids = (NPIdentifier*)NPN_MemAlloc(id_count);

@@ -11,43 +11,46 @@ OVRManager *OVRManager::Instance() {
 }
 
 OVRManager::OVRManager() {
-  OVR::System::Init();
-  sensor_fusion_ = new OVR::SensorFusion();
-  device_manager_ = OVR::DeviceManager::Create();
-  hmd_device_ = device_manager_->EnumerateDevices<OVR::HMDDevice>().CreateDevice();
-  if (hmd_device_) {
-    sensor_fusion_->AttachToSensor(hmd_device_->GetSensor());
-  }
-  device_manager_->SetMessageHandler(this);
-}
+	ovr_Initialize();
+	ovrHmd hmd_devive = ovrHmd_Create(0);
+	hmd_device_ = hmd_devive;
 
-void OVRManager::OnMessage(const OVR::Message &message) {
-  switch(message.Type) {
-  case OVR::MessageType::Message_DeviceRemoved:
-    // TODO: Verify that the removed device is the one we're using.
-    if (hmd_device_) {
-      hmd_device_->Release();
-      hmd_device_ = NULL;
-    }
-    break;
-  case OVR::MessageType::Message_DeviceAdded:
-    if (!hmd_device_) {
-      // TODO: This doesn't work for some reason.
-      hmd_device_ = device_manager_->EnumerateDevices<OVR::HMDDevice>().CreateDevice();
-      if (hmd_device_) {
-        sensor_fusion_->AttachToSensor(hmd_device_->GetSensor());
-      }
-    }
-    break;
-  default:
-    break;
-  }
+	ovrHmd_ConfigureTracking(hmd_devive, ovrTrackingCap_Orientation |
+		ovrTrackingCap_MagYawCorrection |
+		ovrTrackingCap_Position, 0);
 }
 
 bool OVRManager::DevicePresent() const {
   return hmd_device_;
 }
 
-OVR::Quatf &OVRManager::GetOrientation() const {
-  return sensor_fusion_->GetOrientation();
+OVR::Quatf* &OVRManager::GetOrientation() const {
+
+	static ovrPosef eyeRenderPose[2];
+
+	ovrEyeType eye = hmd_device_->EyeRenderOrder[0];
+	eyeRenderPose[0] = ovrHmd_GetEyePose(hmd_device_, eye);
+
+	OVR::Quatf* orientation = new OVR::Quatf(eyeRenderPose[0].Orientation.x, eyeRenderPose[0].Orientation.y, eyeRenderPose[0].Orientation.z, eyeRenderPose[0].Orientation.w);
+	
+	return orientation;
 }
+
+OVR::Vector3f* &OVRManager::GetPosition() const {
+
+	static ovrPosef eyeRenderPose[2];
+
+	ovrEyeType eye = hmd_device_->EyeRenderOrder[0];
+	eyeRenderPose[0] = ovrHmd_GetEyePose(hmd_device_, eye);	
+
+	OVR::Vector3f* position = new OVR::Vector3f(eyeRenderPose[0].Position.x, eyeRenderPose[0].Position.y, eyeRenderPose[0].Position.z);
+
+	return position;
+}
+
+ovrHmd &OVRManager::GetConfiguration() const {
+
+	ovrHmd test = hmd_device_;
+	return test;
+}
+

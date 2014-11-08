@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 	<head>
 		<meta charset="utf-8">
@@ -151,8 +151,8 @@
 				controls = new THREE.OculusRiftControls( camera );
 				scene.add( controls.getObject() );
 
-				// var cameraHelper = new THREE.CameraHelper(camera);
-				// scene.add(cameraHelper);
+				 //var cameraHelper = new THREE.CameraHelper(camera);
+				 //scene.add(cameraHelper);
 
 				ray = new THREE.Raycaster();
 				ray.ray.direction.set( 0, -1, 0 );
@@ -276,12 +276,20 @@
 				}
 
 				// Poll VR, if it's ready.
-        if (vr.isReady) {
-          vr.poll(vrstate);
-        }
+                if (vr.isReady) {
+                    vr.poll(vrstate);
+                    
+                    camera.position.x = vrstate.oculus.position[0] * 100;
+                    camera.position.y = vrstate.oculus.position[1] * 100 +50;
+                    camera.position.z = vrstate.oculus.position[2] * 100;
+
+                    camera.rotation.w = vrstate.oculus.rotation[3] * Math.PI;                   
+                    camera.rotation.y = vrstate.oculus.rotation[1] * Math.PI;
+                    camera.rotation.z = vrstate.oculus.rotation[2] * Math.PI;
+                    camera.rotation.x = vrstate.oculus.rotation[0] * Math.PI;                                                           
+                }
 				controls.update( Date.now() - time, vr.isReady ? vrstate : null );
 
-				//renderer.render( scene, camera );
 				effect.render( scene, camera );
 
 				time = Date.now();

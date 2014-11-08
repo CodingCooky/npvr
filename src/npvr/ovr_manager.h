@@ -8,17 +8,16 @@
 
 namespace npvr {
 
-class OVRManager: public OVR::MessageHandler {
+class OVRManager {
 public:
   static OVRManager *Instance();
   bool DevicePresent() const;
-  OVR::Quatf &GetOrientation() const;
-  virtual void OnMessage(const OVR::Message &message);
+  OVR::Quatf* &GetOrientation() const;
+  OVR::Vector3f* &GetPosition() const;
+  ovrHmd &OVRManager::GetConfiguration() const;
 private:
   OVRManager();
-  OVR::DeviceManager *device_manager_;
-  OVR::HMDDevice     *hmd_device_;
-  OVR::SensorFusion  *sensor_fusion_;
+  ovrHmd     hmd_device_;
 };
 
 }  // namespace npvr

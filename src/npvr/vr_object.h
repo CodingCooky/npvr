@@ -31,12 +31,15 @@ private:
   void ExecQuery(const char* command_str, std::ostringstream& s);
 
   bool InvokePoll(const NPVariant* args, uint32_t arg_count, NPVariant* result);
+  bool InvokeOConfigurationRequest(const NPVariant* args, uint32_t arg_count, NPVariant* result);
   void PollSixense(std::ostringstream& s);
   void PollOculus(std::ostringstream& s);
+  void GetOculusConfiguration(std::ostringstream& s);
 
 private:
   NPIdentifier    exec_id_;
   NPIdentifier    poll_id_;
+  NPIdentifier	  oState_id_;
 
   bool            sixense_ready_;
 };

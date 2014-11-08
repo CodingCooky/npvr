@@ -1,0 +1,5 @@
+2014.09.14 13:35
+https://github.com/jdarpinian/npvr 
+
+License
+BSD, except the np_* code.
